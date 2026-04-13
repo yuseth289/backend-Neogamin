@@ -1,0 +1,1350 @@
+{
+  "info": {
+    "_postman_id": "4b9d4fa7-b269-49c5-97c6-5d7ed44b2c77",
+    "name": "Proyecto Formativo Ecommerce",
+    "description": "Colección Postman en español alineada con la estructura real del backend ecommerce. Incluye autenticación JWT automática, autorización Bearer global y scripts para guardar IDs reutilizables.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080",
+      "type": "string"
+    },
+    {
+      "key": "token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "idUsuario",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "idProducto",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "idCarrito",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "idItemCarrito",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "idCategoria",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "idPedido",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "idPago",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Autenticación",
+      "description": "Operaciones de autenticación y obtención de JWT.",
+      "item": [
+        {
+          "name": "Registrarse",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Carlos Mendoza\",\n  \"email\": \"carlos@gmail.com\",\n  \"password\": \"Carlos123*\",\n  \"telefono\": \"3001234567\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/registro",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "registro"
+              ]
+            },
+            "description": "Registra un nuevo usuario cliente activo en el sistema."
+          },
+          "response": []
+        },
+        {
+          "name": "Iniciar sesión",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const response = pm.response.json();",
+                  "const token = response.token || response.accessToken;",
+                  "",
+                  "if (token) {",
+                  "    pm.environment.set(\"token\", token);",
+                  "    console.log(\"Token guardado automáticamente\");",
+                  "}",
+                  "",
+                  "const idUsuario = response.usuarioId || response.idUsuario || response.userId;",
+                  "if (idUsuario) {",
+                  "    pm.environment.set(\"idUsuario\", String(idUsuario));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"carlos@gmail.com\",\n  \"password\": \"Carlos123*\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
+            },
+            "description": "Autentica al usuario y guarda automáticamente el JWT en {{token}}."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Usuarios",
+      "description": "Operaciones del usuario autenticado.",
+      "item": [
+        {
+          "name": "Consultar perfil",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const response = pm.response.json();",
+                  "const idUsuario = response.id || response.idUsuario;",
+                  "if (idUsuario) {",
+                  "    pm.environment.set(\"idUsuario\", String(idUsuario));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/usuarios/me",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "usuarios",
+                "me"
+              ]
+            },
+            "description": "Obtiene el perfil del usuario autenticado."
+          },
+          "response": []
+        },
+        {
+          "name": "Convertir en vendedor",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const response = pm.response.json();",
+                  "const idUsuario = response.usuarioId || response.idUsuario;",
+                  "if (idUsuario) {",
+                  "    pm.environment.set(\"idUsuario\", String(idUsuario));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombreCompletoORazonSocial\": \"Comercializadora Mendoza SAS\",\n  \"tipoDocumento\": \"NIT\",\n  \"numeroDocumento\": \"901234567\",\n  \"pais\": \"Colombia\",\n  \"telefono\": \"+57 3001234567\",\n  \"correo\": \"ventas@mendoza.com\",\n  \"nombreComercial\": \"Tienda Mendoza\",\n  \"aceptaTerminos\": true,\n  \"datosPago\": {\n    \"tipoCuenta\": \"AHORROS\",\n    \"numeroCuenta\": \"1234567890\",\n    \"banco\": \"Bancolombia\",\n    \"titularCuenta\": \"Comercializadora Mendoza SAS\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/usuarios/convertir-vendedor",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "usuarios",
+                "convertir-vendedor"
+              ]
+            },
+            "description": "Convierte al usuario autenticado con rol CLIENTE en VENDEDOR, guardando su perfil comercial y, opcionalmente, sus datos de pago."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Catálogo",
+      "description": "Operaciones de productos, categorías, ofertas y búsqueda.",
+      "item": [
+        {
+          "name": "Listar categorías en árbol",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const response = pm.response.json();",
+                  "if (Array.isArray(response) && response.length > 0) {",
+                  "    const primera = response[0];",
+                  "    const idCategoria = primera.idCategoria || primera.id || null;",
+                  "    if (idCategoria) {",
+                  "        pm.environment.set(\"idCategoria\", String(idCategoria));",
+                  "    }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/catalogo/categorias/arbol",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "catalogo",
+                "categorias",
+                "arbol"
+              ]
+            },
+            "description": "Lista las categorías en estructura jerárquica y también puede servir para obtener un {{idCategoria}} existente."
+          },
+          "response": []
+        },
+        {
+          "name": "Crear categoría",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const response = pm.response.json();",
+                  "const idCategoria = response.idCategoria || response.id;",
+                  "if (idCategoria) {",
+                  "    pm.environment.set(\"idCategoria\", String(idCategoria));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"categoriaPadreId\": null,\n  \"nombre\": \"Smartphones\",\n  \"slug\": \"smartphones\",\n  \"descripcion\": \"Telefonos inteligentes y sus variantes\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/catalogo/categorias",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "catalogo",
+                "categorias"
+              ]
+            },
+            "description": "Crea una categoría nueva y guarda automáticamente {{idCategoria}}."
+          },
+          "response": []
+        },
+        {
+          "name": "Crear producto",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const response = pm.response.json();",
+                  "const idProducto = response.idProducto || response.id;",
+                  "if (idProducto) {",
+                  "    pm.environment.set(\"idProducto\", String(idProducto));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"categoriaId\": {{idCategoria}},\n  \"sku\": \"SKU-SM-200\",\n  \"slug\": \"xiaomi-redmi-note-13-pro\",\n  \"nombre\": \"Xiaomi Redmi Note 13 Pro\",\n  \"descripcion\": \"Smartphone 256GB, 8GB RAM, pantalla AMOLED 120Hz\",\n  \"moneda\": \"COP\",\n  \"precioLista\": 1599000.00,\n  \"stockFisico\": 25,\n  \"condicion\": \"nuevo\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/catalogo/productos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "catalogo",
+                "productos"
+              ]
+            },
+            "description": "Crea un producto y guarda automáticamente el {{idProducto}}."
+          },
+          "response": []
+        },
+        {
+          "name": "Actualizar producto",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"categoriaId\": {{idCategoria}},\n  \"vendedorId\": {{idUsuario}},\n  \"sku\": \"SKU-SM-200\",\n  \"slug\": \"xiaomi-redmi-note-13-pro\",\n  \"nombre\": \"Xiaomi Redmi Note 13 Pro 5G\",\n  \"descripcion\": \"Versión actualizada del smartphone\",\n  \"moneda\": \"COP\",\n  \"precioLista\": 1659000.00,\n  \"stockFisico\": 30,\n  \"condicion\": \"nuevo\",\n  \"estado\": \"ACTIVO\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/catalogo/productos/{{idProducto}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "catalogo",
+                "productos",
+                "{{idProducto}}"
+              ]
+            },
+            "description": "Actualiza los datos principales de un producto existente."
+          },
+          "response": []
+        },
+        {
+          "name": "Actualizar precio",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nuevoPrecio\": 1499000.00,\n  \"motivo\": \"Ajuste comercial de precio\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/catalogo/productos/{{idProducto}}/precio",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "catalogo",
+                "productos",
+                "{{idProducto}}",
+                "precio"
+              ]
+            },
+            "description": "Actualiza el precio del producto y registra historial."
+          },
+          "response": []
+        },
+        {
+          "name": "Agregar imagen a producto",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"urlImagen\": \"https://cdn.neogamin.com/productos/xiaomi-redmi-note-13-pro.jpg\",\n  \"altText\": \"Vista frontal Xiaomi Redmi Note 13 Pro\",\n  \"orden\": 1,\n  \"principal\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/catalogo/productos/{{idProducto}}/imagenes",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "catalogo",
+                "productos",
+                "{{idProducto}}",
+                "imagenes"
+              ]
+            },
+            "description": "Agrega una imagen al producto."
+          },
+          "response": []
+        },
+        {
+          "name": "Listar productos",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/catalogo/productos?page=0&size=10&sort=nombre",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "catalogo",
+                "productos"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "0"
+                },
+                {
+                  "key": "size",
+                  "value": "10"
+                },
+                {
+                  "key": "sort",
+                  "value": "nombre"
+                }
+              ]
+            },
+            "description": "Lista productos paginados del catálogo."
+          },
+          "response": []
+        },
+        {
+          "name": "Buscar productos (lenguaje natural)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/catalogo/productos/buscar-natural?texto=celulares baratos&soloDisponibles=true&page=0&size=10",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "catalogo",
+                "productos",
+                "buscar-natural"
+              ],
+              "query": [
+                {
+                  "key": "texto",
+                  "value": "celulares baratos"
+                },
+                {
+                  "key": "soloDisponibles",
+                  "value": "true"
+                },
+                {
+                  "key": "page",
+                  "value": "0"
+                },
+                {
+                  "key": "size",
+                  "value": "10"
+                }
+              ]
+            },
+            "description": "Buscador natural de productos con interpretación semántica simple."
+          },
+          "response": []
+        },
+        {
+          "name": "Crear oferta",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"productoId\": {{idProducto}},\n  \"titulo\": \"Promo Semana Tech\",\n  \"descripcion\": \"Descuento especial por tiempo limitado\",\n  \"porcentajeDesc\": 10.00,\n  \"precioOferta\": null,\n  \"fechaInicio\": \"2026-04-08T08:00:00-05:00\",\n  \"fechaFin\": \"2026-04-15T08:00:00-05:00\",\n  \"estado\": \"ACTIVO\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/catalogo/ofertas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "catalogo",
+                "ofertas"
+              ]
+            },
+            "description": "Crea una oferta sobre un producto existente."
+          },
+          "response": []
+        },
+        {
+          "name": "Listar ofertas activas",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/catalogo/ofertas/activas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "catalogo",
+                "ofertas",
+                "activas"
+              ]
+            },
+            "description": "Devuelve las ofertas vigentes y activas."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Carrito",
+      "description": "Flujo completo de carrito de compra del usuario autenticado.",
+      "item": [
+        {
+          "name": "Obtener mi carrito",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const response = pm.response.json();",
+                  "const idCarrito = response.idCarrito || response.id;",
+                  "if (idCarrito) {",
+                  "    pm.environment.set(\"idCarrito\", String(idCarrito));",
+                  "}",
+                  "if (Array.isArray(response.items) && response.items.length > 0) {",
+                  "    const primerItem = response.items[0];",
+                  "    const idItem = primerItem.idItem || primerItem.id;",
+                  "    if (idItem) {",
+                  "        pm.environment.set(\"idItemCarrito\", String(idItem));",
+                  "    }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/carrito",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "carrito"
+              ]
+            },
+            "description": "Obtiene el carrito activo del usuario autenticado. Si no existe, el backend puede crearlo automáticamente."
+          },
+          "response": []
+        },
+        {
+          "name": "Agregar producto al carrito",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const response = pm.response.json();",
+                  "const idCarrito = response.idCarrito || response.id;",
+                  "if (idCarrito) {",
+                  "    pm.environment.set(\"idCarrito\", String(idCarrito));",
+                  "}",
+                  "if (Array.isArray(response.items) && response.items.length > 0) {",
+                  "    const primerItem = response.items[0];",
+                  "    const idItem = primerItem.idItem || primerItem.id;",
+                  "    if (idItem) {",
+                  "        pm.environment.set(\"idItemCarrito\", String(idItem));",
+                  "    }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"productoId\": {{idProducto}},\n  \"cantidad\": 1\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/carrito/items",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "carrito",
+                "items"
+              ]
+            },
+            "description": "Agrega un producto al carrito del usuario. Si el producto ya existe, suma la cantidad."
+          },
+          "response": []
+        },
+        {
+          "name": "Actualizar cantidad de item",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const response = pm.response.json();",
+                  "if (Array.isArray(response.items) && response.items.length > 0) {",
+                  "    const primerItem = response.items[0];",
+                  "    const idItem = primerItem.idItem || primerItem.id;",
+                  "    if (idItem) {",
+                  "        pm.environment.set(\"idItemCarrito\", String(idItem));",
+                  "    }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cantidad\": 2\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/carrito/items/{{idItemCarrito}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "carrito",
+                "items",
+                "{{idItemCarrito}}"
+              ]
+            },
+            "description": "Actualiza la cantidad de un item específico dentro del carrito."
+          },
+          "response": []
+        },
+        {
+          "name": "Eliminar item del carrito",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{baseUrl}}/api/carrito/items/{{idItemCarrito}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "carrito",
+                "items",
+                "{{idItemCarrito}}"
+              ]
+            },
+            "description": "Elimina un item específico del carrito."
+          },
+          "response": []
+        },
+        {
+          "name": "Vaciar carrito",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{baseUrl}}/api/carrito",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "carrito"
+              ]
+            },
+            "description": "Elimina todos los items del carrito activo del usuario."
+          },
+          "response": []
+        },
+        {
+          "name": "Convertir carrito a pedido",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const response = pm.response.json();",
+                  "const idPedido = response.idPedido || response.id || response.pedidoId;",
+                  "if (idPedido) {",
+                  "    pm.environment.set(\"idPedido\", String(idPedido));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/api/carrito/convertir-a-pedido",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "carrito",
+                "convertir-a-pedido"
+              ]
+            },
+            "description": "Convierte el carrito activo en un pedido borrador y guarda automáticamente {{idPedido}}."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Pedidos",
+      "description": "Flujo principal de compra y gestión de pedidos.",
+      "item": [
+        {
+          "name": "Crear pedido",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const response = pm.response.json();",
+                  "const idPedido = response.idPedido || response.id || response.pedidoId;",
+                  "if (idPedido) {",
+                  "    pm.environment.set(\"idPedido\", String(idPedido));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"moneda\": \"COP\",\n  \"direccionEnvioId\": null,\n  \"direccionFacturaId\": null\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/pedidos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "pedidos"
+              ]
+            },
+            "description": "Crea un pedido borrador y guarda {{idPedido}}."
+          },
+          "response": []
+        },
+        {
+          "name": "Agregar item",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"productoId\": {{idProducto}},\n  \"cantidad\": 1,\n  \"descuentoUnitario\": 0,\n  \"impuestoUnitario\": 0\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/pedidos/{{idPedido}}/items",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "pedidos",
+                "{{idPedido}}",
+                "items"
+              ]
+            },
+            "description": "Agrega un producto al pedido."
+          },
+          "response": []
+        },
+        {
+          "name": "Ver pedido",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/pedidos/{{idPedido}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "pedidos",
+                "{{idPedido}}"
+              ]
+            },
+            "description": "Consulta el detalle del pedido."
+          },
+          "response": []
+        },
+        {
+          "name": "Recalcular pedido",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/api/pedidos/{{idPedido}}/recalcular",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "pedidos",
+                "{{idPedido}}",
+                "recalcular"
+              ]
+            },
+            "description": "Recalcula totales del pedido."
+          },
+          "response": []
+        },
+        {
+          "name": "Checkout",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const response = pm.response.json();",
+                  "const idPedido = response.idPedido || response.pedidoId;",
+                  "const idPago = response.idPago || response.pagoId;",
+                  "if (idPedido) {",
+                  "    pm.environment.set(\"idPedido\", String(idPedido));",
+                  "}",
+                  "if (idPago) {",
+                  "    pm.environment.set(\"idPago\", String(idPago));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"proveedorPago\": \"Wompi\",\n  \"referenciaExterna\": \"REF-EXT-1001\",\n  \"idempotencyKey\": \"checkout-1001\",\n  \"tipoPago\": \"TARJETA\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/pedidos/{{idPedido}}/checkout",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "pedidos",
+                "{{idPedido}}",
+                "checkout"
+              ]
+            },
+            "description": "Finaliza el pedido y genera el pago asociado."
+          },
+          "response": []
+        },
+        {
+          "name": "Listar mis pedidos",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/pedidos/mis-pedidos?page=0&size=10",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "pedidos",
+                "mis-pedidos"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "0"
+                },
+                {
+                  "key": "size",
+                  "value": "10"
+                }
+              ]
+            },
+            "description": "Lista pedidos del usuario autenticado."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Inventario",
+      "description": "Operaciones manuales de ajuste de stock.",
+      "item": [
+        {
+          "name": "Ajustar stock",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"stockFisico\": 35,\n  \"motivo\": \"Ajuste por conteo de inventario\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/inventario/productos/{{idProducto}}/stock",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "inventario",
+                "productos",
+                "{{idProducto}}",
+                "stock"
+              ]
+            },
+            "description": "Ajusta el stock físico manualmente."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Pagos",
+      "description": "Operaciones de pago y aprobación.",
+      "item": [
+        {
+          "name": "Aprobar pago",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const response = pm.response.json();",
+                  "const idPago = response.idPago || response.id;",
+                  "if (idPago) {",
+                  "    pm.environment.set(\"idPago\", String(idPago));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/api/pagos/{{idPago}}/aprobar",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "pagos",
+                "{{idPago}}",
+                "aprobar"
+              ]
+            },
+            "description": "Aprueba un pago existente."
+          },
+          "response": []
+        },
+        {
+          "name": "Obtener pago",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const response = pm.response.json();",
+                  "const idPago = response.idPago || response.id;",
+                  "if (idPago) {",
+                  "    pm.environment.set(\"idPago\", String(idPago));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/pagos/{{idPago}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "pagos",
+                "{{idPago}}"
+              ]
+            },
+            "description": "Consulta el pago asociado al pedido."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Facturación",
+      "description": "Consultas de facturas generadas.",
+      "item": [
+        {
+          "name": "Ver factura",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/facturas/pedido/{{idPedido}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "facturas",
+                "pedido",
+                "{{idPedido}}"
+              ]
+            },
+            "description": "Obtiene la factura del pedido indicado."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Reseñas",
+      "description": "Creación y consulta de reseñas.",
+      "item": [
+        {
+          "name": "Crear reseña",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"productoId\": {{idProducto}},\n  \"calificacion\": 5,\n  \"comentario\": \"Excelente producto, muy recomendado\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/resenas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "resenas"
+              ]
+            },
+            "description": "Crea una reseña sobre un producto."
+          },
+          "response": []
+        },
+        {
+          "name": "Listar reseñas por producto",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/resenas/producto/{{idProducto}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "resenas",
+                "producto",
+                "{{idProducto}}"
+              ]
+            },
+            "description": "Lista reseñas asociadas al producto."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Interacción",
+      "description": "Likes y wishlist del usuario.",
+      "item": [
+        {
+          "name": "Dar like",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/api/interacciones/productos/{{idProducto}}/like",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "interacciones",
+                "productos",
+                "{{idProducto}}",
+                "like"
+              ]
+            },
+            "description": "Activa o desactiva el like del usuario autenticado sobre el producto."
+          },
+          "response": []
+        },
+        {
+          "name": "Ver wishlist",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/interaccion/wishlist",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "interaccion",
+                "wishlist"
+              ]
+            },
+            "description": "Lista la wishlist del usuario autenticado."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Analítica",
+      "description": "Endpoints de dashboard para vendedor y admin.",
+      "item": [
+        {
+          "name": "Resumen vendedor",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/analitica/vendedor/resumen",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "analitica",
+                "vendedor",
+                "resumen"
+              ]
+            },
+            "description": "Obtiene KPIs principales del vendedor autenticado."
+          },
+          "response": []
+        },
+        {
+          "name": "Ventas por periodo vendedor",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/analitica/vendedor/ventas-por-periodo?periodo=DIARIO",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "analitica",
+                "vendedor",
+                "ventas-por-periodo"
+              ],
+              "query": [
+                {
+                  "key": "periodo",
+                  "value": "DIARIO"
+                }
+              ]
+            },
+            "description": "Devuelve ventas del vendedor agrupadas por periodo."
+          },
+          "response": []
+        },
+        {
+          "name": "Resumen admin",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/analitica/admin/resumen",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "analitica",
+                "admin",
+                "resumen"
+              ]
+            },
+            "description": "Obtiene KPIs globales del sistema."
+          },
+          "response": []
+        },
+        {
+          "name": "Top vendedores",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/analitica/admin/top-vendedores",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "analitica",
+                "admin",
+                "top-vendedores"
+              ]
+            },
+            "description": "Lista vendedores con mayor volumen de ingresos."
+          },
+          "response": []
+        },
+        {
+          "name": "Top productos",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/analitica/admin/top-productos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "analitica",
+                "admin",
+                "top-productos"
+              ]
+            },
+            "description": "Lista productos más vendidos a nivel global."
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}
