@@ -17,7 +17,6 @@ import java.time.OffsetDateTime;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import org.hibernate.annotations.ColumnTransformer;
 
 @Getter
 @Setter
@@ -71,7 +70,6 @@ public class Direccion extends EntidadBase {
     @Column(length = 255)
     private String referencia;
 
-    @ColumnTransformer(write = "?::estado_generico")
     @Column(nullable = false)
     private EstadoGenerico estado;
 

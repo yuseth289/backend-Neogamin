@@ -94,6 +94,21 @@ public class AutenticacionServicio {
         );
     }
 
+    @Transactional
+    public void logout(String authorizationHeader) {
+        if (authorizationHeader == null || !authorizationHeader.startsWith("Bearer ")) {
+            return;
+        }
+
+        var token = authorizationHeader.substring(7);
+        var sessionId = jwtService.extraerSessionId(token);
+        if (sessionId == null || sessionId.isBlank()) {
+            return;
+        }
+
+        sesionRepositorioJpa.revokeByTokenHash(hashTokenServicio.sha256(sessionId), OffsetDateTime.now());
+    }
+
     private String normalizarEmail(String email) {
         return email.trim().toLowerCase(Locale.ROOT);
     }

@@ -27,4 +27,14 @@ public interface SesionRepositorioJpa extends JpaRepository<Sesion, Long> {
                and s.activa = true
             """)
     void revokeAllByUsuario(@Param("usuarioId") Long usuarioId, @Param("ahora") OffsetDateTime ahora);
+
+    @Modifying
+    @Query("""
+            update Sesion s
+               set s.activa = false,
+                   s.revocadaEn = :ahora
+             where s.tokenHash = :tokenHash
+               and s.activa = true
+            """)
+    void revokeByTokenHash(@Param("tokenHash") String tokenHash, @Param("ahora") OffsetDateTime ahora);
 }

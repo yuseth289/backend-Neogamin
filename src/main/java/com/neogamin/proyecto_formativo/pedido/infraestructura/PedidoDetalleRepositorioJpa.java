@@ -19,9 +19,9 @@ public interface PedidoDetalleRepositorioJpa extends JpaRepository<PedidoDetalle
             where p.fk_usuario = :usuarioId
               and pd.fk_producto = :productoId
               and p.estado in (
-                  'pagado'::estado_pedido,
-                  'enviado'::estado_pedido,
-                  'entregado'::estado_pedido
+                  'PAGADO',
+                  'ENVIADO',
+                  'ENTREGADO'
               )
             """, nativeQuery = true)
     boolean existsCompraVerificada(

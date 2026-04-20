@@ -14,7 +14,6 @@ import java.util.List;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import org.hibernate.annotations.ColumnTransformer;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -58,11 +57,9 @@ public class Usuario extends EntidadBase implements UserDetails {
     @Column(name = "prefiere_ofertas", nullable = false)
     private Boolean prefiereOfertas = false;
 
-    @ColumnTransformer(write = "?::rol_usuario")
     @Column(nullable = false)
     private RolUsuario rol;
 
-    @ColumnTransformer(write = "?::estado_generico")
     @Column(nullable = false)
     private EstadoGenerico estado;
 
