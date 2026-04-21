@@ -18,6 +18,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -78,5 +79,14 @@ public class AutenticacionController {
             @Parameter(hidden = true) HttpServletRequest servletRequest
     ) {
         return ResponseEntity.ok(autenticacionServicio.login(request, servletRequest));
+    }
+
+    @PostMapping("/logout")
+    @Operation(summary = "Cerrar sesión", description = "Revoca la sesión activa asociada al JWT enviado.")
+    public ResponseEntity<Void> logout(
+            @RequestHeader(value = "Authorization", required = false) String authorizationHeader
+    ) {
+        autenticacionServicio.logout(authorizationHeader);
+        return ResponseEntity.noContent().build();
     }
 }

@@ -13,7 +13,3 @@ ADD COLUMN IF NOT EXISTS fecha_estimada_entrega TIMESTAMPTZ;
 CREATE UNIQUE INDEX IF NOT EXISTS uq_pedido_numero_pedido
 ON public.pedido (numero_pedido)
 WHERE numero_pedido IS NOT NULL;
-
-ALTER TYPE tipo_pago ADD VALUE IF NOT EXISTS 'PAYPAL';
-ALTER TYPE tipo_pago ADD VALUE IF NOT EXISTS 'EFECTY';
-ALTER TYPE tipo_pago ADD VALUE IF NOT EXISTS 'NEQUI';

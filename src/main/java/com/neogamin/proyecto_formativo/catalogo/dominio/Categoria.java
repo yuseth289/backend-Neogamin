@@ -15,7 +15,6 @@ import java.time.OffsetDateTime;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import org.hibernate.annotations.ColumnTransformer;
 
 @Getter
 @Setter
@@ -42,7 +41,6 @@ public class Categoria extends EntidadBase {
     @Column(length = 255)
     private String descripcion;
 
-    @ColumnTransformer(write = "?::estado_generico")
     @Column(nullable = false)
     private EstadoGenerico estado;
 

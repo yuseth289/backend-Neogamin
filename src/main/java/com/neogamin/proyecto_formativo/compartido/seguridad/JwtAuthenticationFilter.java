@@ -2,6 +2,7 @@ package com.neogamin.proyecto_formativo.compartido.seguridad;
 
 import com.neogamin.proyecto_formativo.usuario.aplicacion.UsuarioDetallesServicio;
 import com.neogamin.proyecto_formativo.usuario.infraestructura.SesionRepositorioJpa;
+import io.jsonwebtoken.JwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -33,22 +34,35 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             return;
         }
 
-        var token = header.substring(7);
-        var username = jwtService.extraerUsername(token);
-        if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-            var usuario = usuarioDetallesServicio.loadUserByUsername(username);
-            var sessionId = jwtService.extraerSessionId(token);
-            var tokenHash = hashTokenServicio.sha256(sessionId);
-            var sesionActiva = sesionRepositorioJpa.findActivaByTokenHash(tokenHash, OffsetDateTime.now()).isPresent();
-            if (sesionActiva && jwtService.esTokenValido(token, usuario)) {
-                var authToken = new UsernamePasswordAuthenticationToken(
-                        usuario,
-                        null,
-                        usuario.getAuthorities()
-                );
-                authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                SecurityContextHolder.getContext().setAuthentication(authToken);
+        try {
+            var token = header.substring(7);
+            var username = jwtService.extraerUsername(token);
+            if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+                var usuario = usuarioDetallesServicio.loadUserByUsername(username);
+                var sessionId = jwtService.extraerSessionId(token);
+                if (sessionId == null || sessionId.isBlank()) {
+                    response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Token JWT inválido o expirado");
+                    return;
+                }
+                var tokenHash = hashTokenServicio.sha256(sessionId);
+                var sesionActiva = sesionRepositorioJpa.findActivaByTokenHash(tokenHash, OffsetDateTime.now()).isPresent();
+                if (sesionActiva && jwtService.esTokenValido(token, usuario)) {
+                    var authToken = new UsernamePasswordAuthenticationToken(
+                            usuario,
+                            null,
+                            usuario.getAuthorities()
+                    );
+                    authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                    SecurityContextHolder.getContext().setAuthentication(authToken);
+                } else {
+                    response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Token JWT inválido o expirado");
+                    return;
+                }
             }
+        } catch (JwtException | IllegalArgumentException ex) {
+            SecurityContextHolder.clearContext();
+            response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Token JWT inválido o expirado");
+            return;
         }
         filterChain.doFilter(request, response);
     }

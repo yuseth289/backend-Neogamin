@@ -2,11 +2,11 @@ spring:
   application:
     name: proyecto_formativo
   profiles:
-    default: default
+    default: dev
   datasource:
-    url: ${DB_URL:jdbc:postgresql://localhost:5432/neogaming}
-    username: ${DB_USERNAME:yuseth}
-    password: ${DB_PASSWORD:1234}
+    url: ${DB_URL:jdbc:postgresql://localhost:5433/neogaming}
+    username: ${DB_USERNAME:neogaming}
+    password: ${DB_PASSWORD:neogaming_dev_password}
     driver-class-name: org.postgresql.Driver
   jpa:
     open-in-view: false
@@ -30,8 +30,23 @@ springdoc:
   swagger-ui:
     enabled: ${SPRINGDOC_SWAGGER_UI_ENABLED:true}
 
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      probes:
+        enabled: true
+      show-details: never
+
 app:
+  cors:
+    allowed-origins:
+      - ${APP_CORS_ORIGIN_1:http://localhost:4200}
+      - ${APP_CORS_ORIGIN_2:http://localhost:4000}
   security:
     jwt:
-      secret: ${JWT_SECRET:zga8uz7Ud7b2LB7teIRpyl7F7RQLdBgJ9AAH9Gy5YYacK7aF6jbGmKQdm7o60rSjSaCzVtkxsacFQqM2xIy8T}
+      secret: ${JWT_SECRET:change-this-dev-secret-before-deploying-neogaming}
       expiracion-minutos: ${JWT_EXPIRATION_MINUTES:120}

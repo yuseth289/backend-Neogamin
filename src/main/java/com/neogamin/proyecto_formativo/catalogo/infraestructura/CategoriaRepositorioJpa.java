@@ -12,7 +12,7 @@ public interface CategoriaRepositorioJpa extends JpaRepository<Categoria, Long> 
             select *
             from categoria c
             where c.deleted_at is null
-              and c.estado = 'activo'::estado_generico
+              and c.estado = 'activo'
             order by c.nombre asc
             """, nativeQuery = true)
     List<Categoria> findActivasNoEliminadasOrderByNombreAsc();

@@ -16,7 +16,6 @@ import java.time.OffsetDateTime;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import org.hibernate.annotations.ColumnTransformer;
 
 @Getter
 @Setter
@@ -52,7 +51,6 @@ public class OfertaEntidad extends EntidadBase {
     @Column(name = "fecha_fin", nullable = false)
     private OffsetDateTime fechaFin;
 
-    @ColumnTransformer(write = "?::estado_generico")
     @Column(nullable = false)
     private EstadoGenerico estado;
 }

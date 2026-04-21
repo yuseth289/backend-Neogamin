@@ -20,7 +20,6 @@ import java.util.List;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import org.hibernate.annotations.ColumnTransformer;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
@@ -78,7 +77,6 @@ public class ProductoEntidad extends EntidadBase {
     @Column(length = 50)
     private String condicion;
 
-    @ColumnTransformer(write = "?::estado_generico")
     @Column(nullable = false)
     private EstadoGenerico estado;
 

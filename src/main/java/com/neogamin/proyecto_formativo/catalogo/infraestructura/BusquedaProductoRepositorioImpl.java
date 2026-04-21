@@ -42,7 +42,7 @@ public class BusquedaProductoRepositorioImpl implements BusquedaProductoReposito
                     select 1
                     from oferta o
                     where o.fk_producto = p.id_producto
-                      and o.estado = 'activo'::estado_generico
+                      and o.estado = 'activo'
                       and now() >= o.fecha_inicio
                       and now() < o.fecha_fin
                 )
@@ -256,7 +256,7 @@ public class BusquedaProductoRepositorioImpl implements BusquedaProductoReposito
                 from producto p
                 join categoria c on c.id_categoria = p.fk_categoria
                 where p.deleted_at is null
-                  and p.estado = 'activo'::estado_generico
+                  and p.estado = 'activo'
                   and c.deleted_at is null
                 """
                 + filtroTipoProducto
