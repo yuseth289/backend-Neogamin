@@ -6,6 +6,7 @@ import com.neogamin.proyecto_formativo.compartido.aplicacion.ForbiddenException;
 import com.neogamin.proyecto_formativo.compartido.aplicacion.NotFoundException;
 import com.neogamin.proyecto_formativo.compartido.seguridad.SeguridadUtils;
 import com.neogamin.proyecto_formativo.inventario.aplicacion.InventarioServicio;
+import com.neogamin.proyecto_formativo.notificacion.aplicacion.PedidoCreadoEmailEvent;
 import com.neogamin.proyecto_formativo.pago.aplicacion.PagoServicio;
 import com.neogamin.proyecto_formativo.pedido.api.dto.AgregarItemPedidoRequest;
 import com.neogamin.proyecto_formativo.pedido.api.dto.CheckoutRequest;
@@ -23,7 +24,9 @@ import com.neogamin.proyecto_formativo.pedido.infraestructura.PedidoRepositorioJ
 import com.neogamin.proyecto_formativo.usuario.infraestructura.UsuarioRepositorioJpa;
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
+import java.time.format.DateTimeFormatter;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -41,6 +44,7 @@ public class PedidoServicio {
     private final InventarioServicio inventarioServicio;
     private final PagoServicio pagoServicio;
     private final PedidoMapper pedidoMapper;
+    private final ApplicationEventPublisher applicationEventPublisher;
 
     @Transactional
     public PedidoResponse crearPedido(CrearPedidoRequest request) {
@@ -52,8 +56,18 @@ public class PedidoServicio {
         pedido.setMoneda(request.moneda() == null || request.moneda().isBlank() ? "COP" : request.moneda());
         pedido.setEstado(EstadoPedido.BORRADOR);
         pedido.setFechaCreacion(OffsetDateTime.now());
+        pedido.setNumeroPedido(generarNumeroPedido(usuario.getId()));
         pedido.setNeedsRecalc(false);
-        return toResponse(pedidoRepositorioJpa.save(pedido));
+        var pedidoGuardado = pedidoRepositorioJpa.save(pedido);
+        applicationEventPublisher.publishEvent(new PedidoCreadoEmailEvent(
+                pedidoGuardado.getId(),
+                pedidoGuardado.getNumeroPedido(),
+                usuario.getNombre(),
+                usuario.getEmail(),
+                pedidoGuardado.getTotal(),
+                pedidoGuardado.getMoneda()
+        ));
+        return toResponse(pedidoGuardado);
     }
 
     @Transactional
@@ -193,5 +207,9 @@ public class PedidoServicio {
                         ))
                         .toList()
         );
+    }
+
+    private String generarNumeroPedido(Long usuarioId) {
+        return "PED-" + OffsetDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss")) + "-" + usuarioId;
     }
 }

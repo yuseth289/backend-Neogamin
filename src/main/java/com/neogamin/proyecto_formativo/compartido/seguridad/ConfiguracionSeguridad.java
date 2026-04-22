@@ -16,6 +16,9 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher;
+import org.springframework.security.web.util.matcher.OrRequestMatcher;
+import org.springframework.security.web.util.matcher.RequestMatcher;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -30,21 +33,31 @@ public class ConfiguracionSeguridad {
     private final CorsProperties corsProperties;
 
     @Bean
-    SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    SecurityFilterChain securityFilterChain(HttpSecurity http, RequestMatcher publicEndpointsMatcher) throws Exception {
         return http
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/**").permitAll()
-                        .requestMatchers("/actuator/health", "/actuator/info").permitAll()
-                        .requestMatchers("/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/catalogo/productos/**").permitAll()
+                        .requestMatchers(publicEndpointsMatcher).permitAll()
                         .anyRequest().authenticated()
                 )
                 .authenticationManager(authenticationManager())
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
                 .build();
+    }
+
+    @Bean
+    RequestMatcher publicEndpointsMatcher() {
+        return new OrRequestMatcher(
+                PathPatternRequestMatcher.pathPattern("/api/auth/**"),
+                PathPatternRequestMatcher.pathPattern("/actuator/health"),
+                PathPatternRequestMatcher.pathPattern("/actuator/info"),
+                PathPatternRequestMatcher.pathPattern("/swagger-ui.html"),
+                PathPatternRequestMatcher.pathPattern("/swagger-ui/**"),
+                PathPatternRequestMatcher.pathPattern("/v3/api-docs/**"),
+                PathPatternRequestMatcher.pathPattern(HttpMethod.GET, "/api/catalogo/productos/**")
+        );
     }
 
     private DaoAuthenticationProvider daoAuthenticationProvider() {
