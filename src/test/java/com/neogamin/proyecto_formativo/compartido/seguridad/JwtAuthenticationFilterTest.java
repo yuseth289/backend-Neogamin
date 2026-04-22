@@ -47,9 +47,10 @@ class JwtAuthenticationFilterTest {
     }
 
     @Test
-    void shouldRejectInvalidTokenWithUnauthorized() throws Exception {
-        var filter = new JwtAuthenticationFilter(jwtService, usuarioDetallesServicio, sesionRepositorioJpa, hashTokenServicio);
+    void shouldRejectInvalidTokenWithUnauthorizedOnProtectedEndpoint() throws Exception {
+        var filter = buildFilter();
         var request = new MockHttpServletRequest();
+        request.setRequestURI("/api/pedidos");
         request.addHeader("Authorization", "Bearer invalid-token");
         var response = new MockHttpServletResponse();
         FilterChain chain = mock(FilterChain.class);
@@ -64,8 +65,9 @@ class JwtAuthenticationFilterTest {
 
     @Test
     void shouldAuthenticateWhenTokenAndSessionAreValid() throws Exception {
-        var filter = new JwtAuthenticationFilter(jwtService, usuarioDetallesServicio, sesionRepositorioJpa, hashTokenServicio);
+        var filter = buildFilter();
         var request = new MockHttpServletRequest();
+        request.setRequestURI("/api/pedidos");
         request.addHeader("Authorization", "Bearer valid-token");
         var response = new MockHttpServletResponse();
         FilterChain chain = mock(FilterChain.class);
@@ -88,7 +90,7 @@ class JwtAuthenticationFilterTest {
 
     @Test
     void shouldPassThroughWhenAuthorizationHeaderIsMissing() throws Exception {
-        var filter = new JwtAuthenticationFilter(jwtService, usuarioDetallesServicio, sesionRepositorioJpa, hashTokenServicio);
+        var filter = buildFilter();
         var request = new MockHttpServletRequest();
         var response = new MockHttpServletResponse();
         FilterChain chain = mock(FilterChain.class);
@@ -97,6 +99,57 @@ class JwtAuthenticationFilterTest {
 
         assertThat(response.getStatus()).isEqualTo(200);
         verify(chain).doFilter(request, response);
+    }
+
+    @Test
+    void shouldIgnoreInvalidTokenOnPublicEndpoint() throws Exception {
+        var filter = buildFilter();
+        var request = new MockHttpServletRequest();
+        request.setRequestURI("/api/auth/login");
+        request.addHeader("Authorization", "Bearer invalid-token");
+        var response = new MockHttpServletResponse();
+        FilterChain chain = mock(FilterChain.class);
+
+        when(jwtService.extraerUsername("invalid-token")).thenThrow(new JwtException("bad token"));
+
+        filter.doFilter(request, response, chain);
+
+        assertThat(response.getStatus()).isEqualTo(200);
+        assertThat(SecurityContextHolder.getContext().getAuthentication()).isNull();
+        verify(chain).doFilter(request, response);
+    }
+
+    @Test
+    void shouldIgnoreRevokedTokenOnPublicEndpoint() throws Exception {
+        var filter = buildFilter();
+        var request = new MockHttpServletRequest();
+        request.setRequestURI("/api/auth/logout");
+        request.addHeader("Authorization", "Bearer revoked-token");
+        var response = new MockHttpServletResponse();
+        FilterChain chain = mock(FilterChain.class);
+        var usuario = activeUser();
+
+        when(jwtService.extraerUsername("revoked-token")).thenReturn(usuario.getEmail());
+        when(jwtService.extraerSessionId("revoked-token")).thenReturn("session-123");
+        when(usuarioDetallesServicio.loadUserByUsername(usuario.getEmail())).thenReturn(usuario);
+        when(hashTokenServicio.sha256("session-123")).thenReturn("hashed-session");
+        when(sesionRepositorioJpa.findActivaByTokenHash(eq("hashed-session"), any())).thenReturn(Optional.empty());
+
+        filter.doFilter(request, response, chain);
+
+        assertThat(response.getStatus()).isEqualTo(200);
+        assertThat(SecurityContextHolder.getContext().getAuthentication()).isNull();
+        verify(chain).doFilter(request, response);
+        verify(jwtService, never()).esTokenValido("revoked-token", usuario);
+    }
+
+    private JwtAuthenticationFilter buildFilter() {
+        return new JwtAuthenticationFilter(
+                jwtService,
+                usuarioDetallesServicio,
+                sesionRepositorioJpa,
+                hashTokenServicio
+        );
     }
 
     private Usuario activeUser() {

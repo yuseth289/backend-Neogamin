@@ -8,6 +8,21 @@ spring:
     username: ${DB_USERNAME:neogaming}
     password: ${DB_PASSWORD:neogaming_dev_password}
     driver-class-name: org.postgresql.Driver
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
+          connectiontimeout: 5000
+          timeout: 5000
+          writetimeout: 5000
   jpa:
     open-in-view: false
     hibernate:
@@ -48,5 +63,7 @@ app:
       - ${APP_CORS_ORIGIN_2:http://localhost:4000}
   security:
     jwt:
-      secret: ${JWT_SECRET:change-this-dev-secret-before-deploying-neogaming}
+      secret: ${JWT_SECRET:dev-jwt-secret-change-me-123456789012}
       expiracion-minutos: ${JWT_EXPIRATION_MINUTES:120}
+  notificacion:
+    email-remitente: ${APP_NOTIFICACION_EMAIL_REMITENTE:neogaming2026@gmail.com}

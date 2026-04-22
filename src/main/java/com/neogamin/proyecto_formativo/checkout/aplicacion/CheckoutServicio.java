@@ -25,6 +25,7 @@ import com.neogamin.proyecto_formativo.compartido.dominio.EstadoGenerico;
 import com.neogamin.proyecto_formativo.compartido.seguridad.SeguridadUtils;
 import com.neogamin.proyecto_formativo.facturacion.infraestructura.FacturaRepositorioJpa;
 import com.neogamin.proyecto_formativo.inventario.aplicacion.InventarioServicio;
+import com.neogamin.proyecto_formativo.notificacion.aplicacion.PedidoCreadoEmailEvent;
 import com.neogamin.proyecto_formativo.pago.aplicacion.PagoServicio;
 import com.neogamin.proyecto_formativo.pago.dominio.EstadoPago;
 import com.neogamin.proyecto_formativo.pago.dominio.Pago;
@@ -47,6 +48,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -69,6 +71,7 @@ public class CheckoutServicio {
     private final FacturaRepositorioJpa facturaRepositorioJpa;
     private final InventarioServicio inventarioServicio;
     private final PagoServicio pagoServicio;
+    private final ApplicationEventPublisher applicationEventPublisher;
 
     @Transactional
     public IniciarCheckoutResponse iniciarCheckout() {
@@ -193,6 +196,7 @@ public class CheckoutServicio {
 
         var pedido = pedidoRepositorioJpa.findTopByUsuarioIdAndEstadoOrderByFechaCreacionDesc(usuarioId, EstadoPedido.BORRADOR)
                 .orElseGet(Pedido::new);
+        var nuevoPedido = pedido.getId() == null;
 
         if (pedido.getId() == null) {
             pedido.setUsuario(usuario);
@@ -231,7 +235,18 @@ public class CheckoutServicio {
         }
 
         recalcularMontosPedido(pedido);
-        return pedidoRepositorioJpa.save(pedido);
+        var pedidoGuardado = pedidoRepositorioJpa.save(pedido);
+        if (nuevoPedido) {
+            applicationEventPublisher.publishEvent(new PedidoCreadoEmailEvent(
+                    pedidoGuardado.getId(),
+                    pedidoGuardado.getNumeroPedido(),
+                    usuario.getNombre(),
+                    usuario.getEmail(),
+                    pedidoGuardado.getTotal(),
+                    pedidoGuardado.getMoneda()
+            ));
+        }
+        return pedidoGuardado;
     }
 
     private void recalcularMontosPedido(Pedido pedido) {

@@ -5,11 +5,13 @@ import com.neogamin.proyecto_formativo.facturacion.api.dto.FacturaResponse;
 import com.neogamin.proyecto_formativo.facturacion.dominio.EstadoFactura;
 import com.neogamin.proyecto_formativo.facturacion.dominio.Factura;
 import com.neogamin.proyecto_formativo.facturacion.infraestructura.FacturaRepositorioJpa;
+import com.neogamin.proyecto_formativo.notificacion.aplicacion.FacturaEmitidaEmailEvent;
 import com.neogamin.proyecto_formativo.pago.dominio.Pago;
 import com.neogamin.proyecto_formativo.pedido.dominio.Pedido;
 import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,6 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class FacturacionServicio {
 
     private final FacturaRepositorioJpa facturaRepositorioJpa;
+    private final ApplicationEventPublisher applicationEventPublisher;
 
     @Transactional
     public Factura emitir(Pedido pedido, Pago pago) {
@@ -46,7 +49,18 @@ public class FacturacionServicio {
         factura.setMetodoPago(pago.getTipoPago());
         factura.setFechaEmision(OffsetDateTime.now());
         factura.setEstadoFactura(EstadoFactura.EMITIDA);
-        return facturaRepositorioJpa.save(factura);
+        var facturaGuardada = facturaRepositorioJpa.save(factura);
+        applicationEventPublisher.publishEvent(new FacturaEmitidaEmailEvent(
+                facturaGuardada.getId(),
+                pedido.getId(),
+                facturaGuardada.getNumeroFactura(),
+                pedido.getNumeroPedido(),
+                pedido.getUsuario().getNombre(),
+                pedido.getUsuario().getEmail(),
+                facturaGuardada.getTotalNeto(),
+                facturaGuardada.getMoneda()
+        ));
+        return facturaGuardada;
     }
 
     public FacturaResponse toResponse(Factura factura) {

@@ -60,6 +60,11 @@
       "key": "idPago",
       "value": "",
       "type": "string"
+    },
+    {
+      "key": "numeroPedido",
+      "value": "",
+      "type": "string"
     }
   ],
   "item": [
@@ -1034,6 +1039,221 @@
       ]
     },
     {
+      "name": "Checkout",
+      "description": "Flujo de checkout desacoplado para envío, pago y confirmación del pedido.",
+      "item": [
+        {
+          "name": "Iniciar checkout",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const response = pm.response.json();",
+                  "const idPedido = response.idPedido || response.pedidoId || response.id;",
+                  "const numeroPedido = response.numeroPedido || response.orderNumber;",
+                  "if (idPedido) {",
+                  "    pm.environment.set(\"idPedido\", String(idPedido));",
+                  "}",
+                  "if (numeroPedido) {",
+                  "    pm.environment.set(\"numeroPedido\", String(numeroPedido));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/api/checkout",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "checkout"
+              ]
+            },
+            "description": "Inicia el checkout desde el carrito activo y guarda {{idPedido}} y {{numeroPedido}}."
+          },
+          "response": []
+        },
+        {
+          "name": "Guardar envío",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const response = pm.response.json();",
+                  "const idPedido = response.idPedido || response.pedidoId || response.id;",
+                  "const numeroPedido = response.numeroPedido || response.orderNumber;",
+                  "if (idPedido) {",
+                  "    pm.environment.set(\"idPedido\", String(idPedido));",
+                  "}",
+                  "if (numeroPedido) {",
+                  "    pm.environment.set(\"numeroPedido\", String(numeroPedido));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pedidoId\": {{idPedido}},\n  \"direccionEnvioId\": null,\n  \"direccionFacturaId\": null,\n  \"direccionEnvio\": {\n    \"nombreCompleto\": \"Carlos Mendoza\",\n    \"correoElectronico\": \"carlos@gmail.com\",\n    \"telefono\": \"3001234567\",\n    \"direccion\": \"Calle 123 #45-67\",\n    \"apartamentoInterior\": \"Apto 301\",\n    \"ciudad\": \"Bogotá\",\n    \"estadoRegion\": \"Cundinamarca\",\n    \"codigoPostal\": \"110111\",\n    \"pais\": \"Colombia\",\n    \"referenciaEntrega\": \"Porteria principal\"\n  },\n  \"direccionFactura\": null,\n  \"mismaDireccionFacturacion\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/checkout/envio",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "checkout",
+                "envio"
+              ]
+            },
+            "description": "Guarda la dirección manual del checkout para el pedido actual."
+          },
+          "response": []
+        },
+        {
+          "name": "Procesar pago aprobado",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const response = pm.response.json();",
+                  "const idPedido = response.idPedido || response.pedidoId;",
+                  "const idPago = response.idPago || response.pagoId;",
+                  "const numeroPedido = response.numeroPedido || response.orderNumber;",
+                  "if (idPedido) {",
+                  "    pm.environment.set(\"idPedido\", String(idPedido));",
+                  "}",
+                  "if (idPago) {",
+                  "    pm.environment.set(\"idPago\", String(idPago));",
+                  "}",
+                  "if (numeroPedido) {",
+                  "    pm.environment.set(\"numeroPedido\", String(numeroPedido));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pedidoId\": {{idPedido}},\n  \"metodoPago\": {\n    \"tipoPago\": \"TARJETA\",\n    \"nombreTitular\": \"Carlos Mendoza\",\n    \"numeroTarjeta\": \"4242 4242 4242 4242\",\n    \"fechaVencimiento\": \"12/29\",\n    \"cvv\": \"123\"\n  },\n  \"simularFallo\": false\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/checkout/pago",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "checkout",
+                "pago"
+              ]
+            },
+            "description": "Procesa un pago aprobado desde checkout y guarda {{idPago}} y {{numeroPedido}}."
+          },
+          "response": []
+        },
+        {
+          "name": "Procesar pago rechazado",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const response = pm.response.json();",
+                  "const idPedido = response.idPedido || response.pedidoId;",
+                  "const idPago = response.idPago || response.pagoId;",
+                  "const numeroPedido = response.numeroPedido || response.orderNumber;",
+                  "if (idPedido) {",
+                  "    pm.environment.set(\"idPedido\", String(idPedido));",
+                  "}",
+                  "if (idPago) {",
+                  "    pm.environment.set(\"idPago\", String(idPago));",
+                  "}",
+                  "if (numeroPedido) {",
+                  "    pm.environment.set(\"numeroPedido\", String(numeroPedido));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pedidoId\": {{idPedido}},\n  \"metodoPago\": {\n    \"tipoPago\": \"TARJETA\",\n    \"nombreTitular\": \"Carlos Mendoza\",\n    \"numeroTarjeta\": \"4000 0000 0000 0000\",\n    \"fechaVencimiento\": \"12/29\",\n    \"cvv\": \"123\"\n  },\n  \"simularFallo\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/checkout/pago",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "checkout",
+                "pago"
+              ]
+            },
+            "description": "Procesa un pago rechazado desde checkout para probar el correo de rechazo."
+          },
+          "response": []
+        },
+        {
+          "name": "Obtener confirmación checkout",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/checkout/confirmacion/{{numeroPedido}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "checkout",
+                "confirmacion",
+                "{{numeroPedido}}"
+              ]
+            },
+            "description": "Consulta la confirmación del pedido usando {{numeroPedido}}."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
       "name": "Pagos",
       "description": "Operaciones de pago y aprobación.",
       "item": [
@@ -1069,6 +1289,41 @@
               ]
             },
             "description": "Aprueba un pago existente."
+          },
+          "response": []
+        },
+        {
+          "name": "Rechazar pago",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const response = pm.response.json();",
+                  "const idPago = response.idPago || response.id;",
+                  "if (idPago) {",
+                  "    pm.environment.set(\"idPago\", String(idPago));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/api/pagos/{{idPago}}/rechazar",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "pagos",
+                "{{idPago}}",
+                "rechazar"
+              ]
+            },
+            "description": "Rechaza un pago existente para probar la notificación de pago rechazado."
           },
           "response": []
         },

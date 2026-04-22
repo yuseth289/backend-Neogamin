@@ -4,6 +4,8 @@ import com.neogamin.proyecto_formativo.compartido.aplicacion.BadRequestException
 import com.neogamin.proyecto_formativo.compartido.aplicacion.NotFoundException;
 import com.neogamin.proyecto_formativo.facturacion.aplicacion.FacturacionServicio;
 import com.neogamin.proyecto_formativo.inventario.aplicacion.InventarioServicio;
+import com.neogamin.proyecto_formativo.notificacion.aplicacion.PagoAprobadoEmailEvent;
+import com.neogamin.proyecto_formativo.notificacion.aplicacion.PagoRechazadoEmailEvent;
 import com.neogamin.proyecto_formativo.pago.api.dto.PagoResponse;
 import com.neogamin.proyecto_formativo.pago.dominio.EstadoPago;
 import com.neogamin.proyecto_formativo.pago.dominio.Pago;
@@ -15,6 +17,7 @@ import com.neogamin.proyecto_formativo.pedido.infraestructura.PedidoRepositorioJ
 import java.time.OffsetDateTime;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -26,6 +29,7 @@ public class PagoServicio {
     private final PedidoRepositorioJpa pedidoRepositorioJpa;
     private final InventarioServicio inventarioServicio;
     private final FacturacionServicio facturacionServicio;
+    private final ApplicationEventPublisher applicationEventPublisher;
 
     @Transactional
     public Pago registrarPagoPendiente(Pedido pedido, CheckoutRequest request) {
@@ -53,6 +57,16 @@ public class PagoServicio {
         pedido.setFechaPago(OffsetDateTime.now());
         inventarioServicio.confirmarStock(pedido);
         facturacionServicio.emitir(pedido, pago);
+        applicationEventPublisher.publishEvent(new PagoAprobadoEmailEvent(
+                pago.getId(),
+                pedido.getId(),
+                pedido.getNumeroPedido(),
+                pedido.getUsuario().getNombre(),
+                pedido.getUsuario().getEmail(),
+                pago.getMonto(),
+                pago.getMoneda(),
+                pago.getTipoPago().name()
+        ));
         return toResponse(pago);
     }
 
@@ -70,6 +84,16 @@ public class PagoServicio {
         pago.setFechaEvento(OffsetDateTime.now());
         pedido.setEstado(EstadoPedido.CANCELADO);
         inventarioServicio.liberarStock(pedido);
+        applicationEventPublisher.publishEvent(new PagoRechazadoEmailEvent(
+                pago.getId(),
+                pedido.getId(),
+                pedido.getNumeroPedido(),
+                pedido.getUsuario().getNombre(),
+                pedido.getUsuario().getEmail(),
+                pago.getMonto(),
+                pago.getMoneda(),
+                pago.getTipoPago().name()
+        ));
         return toResponse(pago);
     }
 

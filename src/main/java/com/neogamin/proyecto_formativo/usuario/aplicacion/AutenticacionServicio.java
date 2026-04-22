@@ -5,10 +5,13 @@ import com.neogamin.proyecto_formativo.compartido.aplicacion.BadRequestException
 import com.neogamin.proyecto_formativo.compartido.dominio.EstadoGenerico;
 import com.neogamin.proyecto_formativo.compartido.seguridad.HashTokenServicio;
 import com.neogamin.proyecto_formativo.compartido.seguridad.JwtService;
+import com.neogamin.proyecto_formativo.notificacion.aplicacion.UsuarioInicioSesionEmailEvent;
+import com.neogamin.proyecto_formativo.notificacion.aplicacion.UsuarioRegistradoEmailEvent;
 import com.neogamin.proyecto_formativo.usuario.api.dto.LoginRequest;
 import com.neogamin.proyecto_formativo.usuario.api.dto.LoginResponse;
 import com.neogamin.proyecto_formativo.usuario.api.dto.RegistroUsuarioRequest;
 import com.neogamin.proyecto_formativo.usuario.api.dto.UsuarioResponse;
+import io.jsonwebtoken.JwtException;
 import com.neogamin.proyecto_formativo.usuario.dominio.RolUsuario;
 import com.neogamin.proyecto_formativo.usuario.dominio.Sesion;
 import com.neogamin.proyecto_formativo.usuario.dominio.Usuario;
@@ -19,6 +22,7 @@ import java.time.OffsetDateTime;
 import java.util.Locale;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -32,6 +36,7 @@ public class AutenticacionServicio {
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final HashTokenServicio hashTokenServicio;
+    private final ApplicationEventPublisher applicationEventPublisher;
 
     @Transactional
     public UsuarioResponse registrar(RegistroUsuarioRequest request) {
@@ -51,6 +56,11 @@ public class AutenticacionServicio {
         usuario.setEstado(EstadoGenerico.ACTIVO);
 
         Usuario usuarioGuardado = usuarioRepositorioJpa.save(usuario);
+        applicationEventPublisher.publishEvent(new UsuarioRegistradoEmailEvent(
+                usuarioGuardado.getId(),
+                usuarioGuardado.getNombre(),
+                usuarioGuardado.getEmail()
+        ));
         return new UsuarioResponse(
                 usuarioGuardado.getId(),
                 usuarioGuardado.getNombre(),
@@ -84,6 +94,11 @@ public class AutenticacionServicio {
         sesion.setCreadaEn(OffsetDateTime.now());
         sesion.setExpiraEn(OffsetDateTime.now().plusHours(2));
         sesionRepositorioJpa.save(sesion);
+        applicationEventPublisher.publishEvent(new UsuarioInicioSesionEmailEvent(
+                usuario.getId(),
+                usuario.getNombre(),
+                usuario.getEmail()
+        ));
 
         return new LoginResponse(
                 token,
@@ -100,13 +115,17 @@ public class AutenticacionServicio {
             return;
         }
 
-        var token = authorizationHeader.substring(7);
-        var sessionId = jwtService.extraerSessionId(token);
-        if (sessionId == null || sessionId.isBlank()) {
+        try {
+            var token = authorizationHeader.substring(7);
+            var sessionId = jwtService.extraerSessionId(token);
+            if (sessionId == null || sessionId.isBlank()) {
+                return;
+            }
+
+            sesionRepositorioJpa.revokeByTokenHash(hashTokenServicio.sha256(sessionId), OffsetDateTime.now());
+        } catch (JwtException | IllegalArgumentException ex) {
             return;
         }
-
-        sesionRepositorioJpa.revokeByTokenHash(hashTokenServicio.sha256(sessionId), OffsetDateTime.now());
     }
 
     private String normalizarEmail(String email) {
