@@ -10,7 +10,7 @@ class NotificacionPropertiesTest {
     @Test
     void shouldRequireValidSenderEmail() {
         var validator = Validation.buildDefaultValidatorFactory().getValidator();
-        var violations = validator.validate(new NotificacionProperties("correo-invalido"));
+        var violations = validator.validate(new NotificacionProperties(false, "correo-invalido"));
 
         assertThat(violations)
                 .extracting(violation -> violation.getMessage())

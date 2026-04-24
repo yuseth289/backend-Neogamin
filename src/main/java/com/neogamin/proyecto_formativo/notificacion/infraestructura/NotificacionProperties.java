@@ -8,6 +8,7 @@ import org.springframework.validation.annotation.Validated;
 @Validated
 @ConfigurationProperties(prefix = "app.notificacion")
 public record NotificacionProperties(
+        boolean emailHabilitado,
         @NotBlank(message = "Email remitente must be configured via APP_NOTIFICACION_EMAIL_REMITENTE or app.notificacion.email-remitente")
         @Email(message = "Email remitente must be a valid email address")
         String emailRemitente

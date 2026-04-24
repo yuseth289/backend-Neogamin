@@ -18,9 +18,19 @@ public class SmtpNotificadorCorreo implements NotificadorCorreo {
     private static final Logger logger = LoggerFactory.getLogger(SmtpNotificadorCorreo.class);
 
     private final JavaMailSender javaMailSender;
+    private final NotificacionProperties notificacionProperties;
 
     @Override
     public void enviar(MensajeCorreo mensajeCorreo) {
+        if (!notificacionProperties.emailHabilitado()) {
+            logger.info(
+                    "Envio de correo deshabilitado. Se omite la notificacion {} para {}",
+                    mensajeCorreo.tipo(),
+                    mensajeCorreo.destinatario()
+            );
+            return;
+        }
+
         try {
             var mimeMessage = javaMailSender.createMimeMessage();
             var helper = new MimeMessageHelper(mimeMessage, "UTF-8");
