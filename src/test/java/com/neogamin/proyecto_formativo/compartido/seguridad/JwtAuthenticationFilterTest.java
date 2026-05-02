@@ -120,6 +120,25 @@ class JwtAuthenticationFilterTest {
     }
 
     @Test
+    void shouldIgnoreInvalidTokenOnPublicCatalogCategoriesEndpoint() throws Exception {
+        var filter = buildFilter();
+        var request = new MockHttpServletRequest();
+        request.setMethod("GET");
+        request.setRequestURI("/api/catalogo/categorias/arbol");
+        request.addHeader("Authorization", "Bearer invalid-token");
+        var response = new MockHttpServletResponse();
+        FilterChain chain = mock(FilterChain.class);
+
+        when(jwtService.extraerUsername("invalid-token")).thenThrow(new JwtException("bad token"));
+
+        filter.doFilter(request, response, chain);
+
+        assertThat(response.getStatus()).isEqualTo(200);
+        assertThat(SecurityContextHolder.getContext().getAuthentication()).isNull();
+        verify(chain).doFilter(request, response);
+    }
+
+    @Test
     void shouldIgnoreRevokedTokenOnPublicEndpoint() throws Exception {
         var filter = buildFilter();
         var request = new MockHttpServletRequest();

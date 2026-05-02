@@ -18,6 +18,7 @@ import com.neogamin.proyecto_formativo.catalogo.infraestructura.ProductoEspecifi
 import com.neogamin.proyecto_formativo.catalogo.infraestructura.ProductoPrecioHistorialRepositorio;
 import com.neogamin.proyecto_formativo.catalogo.infraestructura.ProductoRepositorio;
 import com.neogamin.proyecto_formativo.compartido.aplicacion.BadRequestException;
+import com.neogamin.proyecto_formativo.compartido.aplicacion.ForbiddenException;
 import com.neogamin.proyecto_formativo.compartido.aplicacion.NotFoundException;
 import com.neogamin.proyecto_formativo.compartido.dominio.EstadoGenerico;
 import com.neogamin.proyecto_formativo.compartido.seguridad.SeguridadUtils;
@@ -118,6 +119,8 @@ public class ServicioProducto {
     public ProductoResponse actualizarProducto(Long idProducto, ActualizarProductoRequest request) {
         var producto = productoRepositorio.findById(idProducto)
                 .orElseThrow(() -> new NotFoundException("El producto indicado no existe"));
+        validarPuedeGestionarProducto(producto);
+        validarReasignacionVendedor(request.vendedorId());
 
         var categoria = categoriaRepositorioJpa.findById(request.categoriaId())
                 .orElseThrow(() -> new NotFoundException("La categoría indicada no existe"));
@@ -153,6 +156,7 @@ public class ServicioProducto {
         var producto = productoRepositorio.findById(idProducto)
                 .orElseThrow(() -> new NotFoundException("El producto indicado no existe"));
 
+        validarPuedeGestionarProducto(producto);
         validarNuevoPrecio(request.nuevoPrecio());
 
         var precioAnterior = producto.getPrecioLista();
@@ -175,6 +179,7 @@ public class ServicioProducto {
         var producto = productoRepositorio.findById(idProducto)
                 .orElseThrow(() -> new NotFoundException("El producto indicado no existe"));
 
+        validarPuedeGestionarProducto(producto);
         validarStock(request.stockFisico(), producto.getStockReservado());
 
         var stockFisicoAnterior = producto.getStockFisico();
@@ -244,6 +249,26 @@ public class ServicioProducto {
     private void validarNuevoPrecio(BigDecimal nuevoPrecio) {
         if (nuevoPrecio.compareTo(BigDecimal.ZERO) < 0) {
             throw new BadRequestException("El nuevo precio no puede ser menor a 0");
+        }
+    }
+
+    private void validarPuedeGestionarProducto(ProductoEntidad producto) {
+        var usuario = SeguridadUtils.usuarioAutenticado();
+        if (usuario.getRol() == RolUsuario.ADMIN) {
+            return;
+        }
+        if (usuario.getRol() == RolUsuario.VENDEDOR
+                && producto.getVendedor() != null
+                && producto.getVendedor().getId().equals(usuario.getId())) {
+            return;
+        }
+        throw new ForbiddenException("No tienes permisos para gestionar este producto");
+    }
+
+    private void validarReasignacionVendedor(Long vendedorIdSolicitado) {
+        var usuario = SeguridadUtils.usuarioAutenticado();
+        if (usuario.getRol() == RolUsuario.VENDEDOR && !usuario.getId().equals(vendedorIdSolicitado)) {
+            throw new ForbiddenException("No tienes permisos para reasignar este producto a otro vendedor");
         }
     }
 

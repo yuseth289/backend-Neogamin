@@ -6,7 +6,10 @@ import com.neogamin.proyecto_formativo.catalogo.dominio.ProductoImagenEntidad;
 import com.neogamin.proyecto_formativo.catalogo.infraestructura.ProductoImagenRepositorio;
 import com.neogamin.proyecto_formativo.catalogo.infraestructura.ProductoRepositorio;
 import com.neogamin.proyecto_formativo.compartido.aplicacion.BadRequestException;
+import com.neogamin.proyecto_formativo.compartido.aplicacion.ForbiddenException;
 import com.neogamin.proyecto_formativo.compartido.aplicacion.NotFoundException;
+import com.neogamin.proyecto_formativo.compartido.seguridad.SeguridadUtils;
+import com.neogamin.proyecto_formativo.usuario.dominio.RolUsuario;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
@@ -26,6 +29,7 @@ public class ServicioProductoImagen {
         var producto = productoRepositorio.findById(idProducto)
                 .orElseThrow(() -> new NotFoundException("El producto indicado no existe"));
 
+        validarPuedeGestionarProducto(producto);
         validarOrden(request.orden());
         validarImagenPrincipal(idProducto, request.principal());
 
@@ -42,9 +46,10 @@ public class ServicioProductoImagen {
     @Transactional
     @PreAuthorize("hasAnyRole('ADMIN','VENDEDOR')")
     public ProductoImagenResponse cambiarImagenPrincipal(Long idProducto, Long idImagen) {
-        productoRepositorio.findById(idProducto)
+        var producto = productoRepositorio.findById(idProducto)
                 .orElseThrow(() -> new NotFoundException("El producto indicado no existe"));
 
+        validarPuedeGestionarProducto(producto);
         var imagenNuevaPrincipal = productoImagenRepositorio.findByIdAndProductoIdAndDeletedAtIsNull(idImagen, idProducto)
                 .orElseThrow(() -> new NotFoundException("La imagen indicada no existe para el producto"));
 
@@ -67,5 +72,18 @@ public class ServicioProductoImagen {
                 && productoImagenRepositorio.existsByProductoIdAndPrincipalTrueAndDeletedAtIsNull(idProducto)) {
             throw new BadRequestException("El producto ya tiene una imagen principal");
         }
+    }
+
+    private void validarPuedeGestionarProducto(com.neogamin.proyecto_formativo.catalogo.dominio.ProductoEntidad producto) {
+        var usuario = SeguridadUtils.usuarioAutenticado();
+        if (usuario.getRol() == RolUsuario.ADMIN) {
+            return;
+        }
+        if (usuario.getRol() == RolUsuario.VENDEDOR
+                && producto.getVendedor() != null
+                && producto.getVendedor().getId().equals(usuario.getId())) {
+            return;
+        }
+        throw new ForbiddenException("No tienes permisos para gestionar este producto");
     }
 }

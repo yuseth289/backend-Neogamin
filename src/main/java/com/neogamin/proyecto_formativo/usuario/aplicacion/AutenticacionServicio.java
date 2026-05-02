@@ -5,6 +5,7 @@ import com.neogamin.proyecto_formativo.compartido.aplicacion.BadRequestException
 import com.neogamin.proyecto_formativo.compartido.dominio.EstadoGenerico;
 import com.neogamin.proyecto_formativo.compartido.seguridad.HashTokenServicio;
 import com.neogamin.proyecto_formativo.compartido.seguridad.JwtService;
+import com.neogamin.proyecto_formativo.compartido.seguridad.SecurityProperties;
 import com.neogamin.proyecto_formativo.notificacion.aplicacion.UsuarioInicioSesionEmailEvent;
 import com.neogamin.proyecto_formativo.notificacion.aplicacion.UsuarioRegistradoEmailEvent;
 import com.neogamin.proyecto_formativo.usuario.api.dto.LoginRequest;
@@ -35,6 +36,7 @@ public class AutenticacionServicio {
     private final SesionRepositorioJpa sesionRepositorioJpa;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
+    private final SecurityProperties securityProperties;
     private final HashTokenServicio hashTokenServicio;
     private final ApplicationEventPublisher applicationEventPublisher;
 
@@ -81,7 +83,8 @@ public class AutenticacionServicio {
             throw new UnauthorizedException("Credenciales inválidas");
         }
 
-        sesionRepositorioJpa.revokeAllByUsuario(usuario.getId(), OffsetDateTime.now());
+        var ahora = OffsetDateTime.now();
+        sesionRepositorioJpa.revokeAllByUsuario(usuario.getId(), ahora);
         var sessionId = UUID.randomUUID().toString();
         var token = jwtService.generarToken(usuario, sessionId);
 
@@ -91,8 +94,8 @@ public class AutenticacionServicio {
         sesion.setIpOrigen(servletRequest.getRemoteAddr());
         sesion.setUserAgent(servletRequest.getHeader("User-Agent"));
         sesion.setActiva(true);
-        sesion.setCreadaEn(OffsetDateTime.now());
-        sesion.setExpiraEn(OffsetDateTime.now().plusHours(2));
+        sesion.setCreadaEn(ahora);
+        sesion.setExpiraEn(ahora.plusMinutes(securityProperties.expiracionMinutos()));
         sesionRepositorioJpa.save(sesion);
         applicationEventPublisher.publishEvent(new UsuarioInicioSesionEmailEvent(
                 usuario.getId(),

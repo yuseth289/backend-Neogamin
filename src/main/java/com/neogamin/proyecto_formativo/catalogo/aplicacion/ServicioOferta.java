@@ -7,8 +7,11 @@ import com.neogamin.proyecto_formativo.catalogo.dominio.OfertaEntidad;
 import com.neogamin.proyecto_formativo.catalogo.infraestructura.OfertaRepositorio;
 import com.neogamin.proyecto_formativo.catalogo.infraestructura.ProductoRepositorio;
 import com.neogamin.proyecto_formativo.compartido.aplicacion.BadRequestException;
+import com.neogamin.proyecto_formativo.compartido.aplicacion.ForbiddenException;
 import com.neogamin.proyecto_formativo.compartido.aplicacion.NotFoundException;
 import com.neogamin.proyecto_formativo.compartido.dominio.EstadoGenerico;
+import com.neogamin.proyecto_formativo.compartido.seguridad.SeguridadUtils;
+import com.neogamin.proyecto_formativo.usuario.dominio.RolUsuario;
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 import java.util.List;
@@ -31,6 +34,7 @@ public class ServicioOferta {
         var producto = productoRepositorio.findById(request.productoId())
                 .orElseThrow(() -> new NotFoundException("El producto indicado no existe"));
 
+        validarPuedeGestionarProducto(producto);
         validarFechas(request.fechaInicio(), request.fechaFin());
         validarTipoDescuento(request.porcentajeDesc(), request.precioOferta());
         var estado = parsearEstado(request.estado());
@@ -82,6 +86,19 @@ public class ServicioOferta {
         } catch (IllegalArgumentException ex) {
             throw new BadRequestException("El estado indicado no es válido");
         }
+    }
+
+    private void validarPuedeGestionarProducto(com.neogamin.proyecto_formativo.catalogo.dominio.ProductoEntidad producto) {
+        var usuario = SeguridadUtils.usuarioAutenticado();
+        if (usuario.getRol() == RolUsuario.ADMIN) {
+            return;
+        }
+        if (usuario.getRol() == RolUsuario.VENDEDOR
+                && producto.getVendedor() != null
+                && producto.getVendedor().getId().equals(usuario.getId())) {
+            return;
+        }
+        throw new ForbiddenException("No tienes permisos para gestionar este producto");
     }
 
     private void actualizarPrecioVigenteSiAplica(

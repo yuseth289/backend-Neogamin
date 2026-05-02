@@ -10,6 +10,8 @@ import com.neogamin.proyecto_formativo.analitica.api.dto.TopVendedorResponse;
 import com.neogamin.proyecto_formativo.analitica.api.dto.VentaCategoriaResponse;
 import com.neogamin.proyecto_formativo.analitica.api.dto.VentaPeriodoResponse;
 import com.neogamin.proyecto_formativo.analitica.dominio.PeriodoAnalitica;
+import com.neogamin.proyecto_formativo.pago.dominio.EstadoPago;
+import com.neogamin.proyecto_formativo.pedido.dominio.EstadoPedido;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import java.math.BigDecimal;
@@ -18,14 +20,22 @@ import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.stream.Collectors;
 import org.springframework.stereotype.Repository;
 
 @Repository
 public class AnaliticaRepositorioImpl implements AnaliticaRepositorio {
 
-    private static final String ESTADOS_VENTA = """
-            ('pagado', 'preparando', 'enviado', 'entregado')
-            """;
+    private static final String ESTADOS_VENTA = toSqlIn(List.of(
+            EstadoPedido.PAGADO.name(),
+            EstadoPedido.PREPARANDO.name(),
+            EstadoPedido.ENVIADO.name(),
+            EstadoPedido.ENTREGADO.name()
+    ));
+    private static final String ESTADOS_PAGO_EXCLUIDOS = toSqlIn(List.of(
+            EstadoPago.RECHAZADO.name(),
+            EstadoPago.ANULADO.name()
+    ));
 
     @PersistenceContext
     private EntityManager entityManager;
@@ -46,7 +56,8 @@ public class AnaliticaRepositorioImpl implements AnaliticaRepositorio {
                 join pedido p on p.id_pedido = pd.fk_pedido
                 join producto pr on pr.id_producto = pd.fk_producto
                 where pr.fk_vendedor = :vendedorId
-                  and p.estado::text in """ + ESTADOS_VENTA;
+                  and p.estado::text in %s
+                """.formatted(ESTADOS_VENTA);
 
         var fila = (Object[]) entityManager.createNativeQuery(sql)
                 .setParameter("vendedorId", vendedorId)
@@ -100,11 +111,11 @@ public class AnaliticaRepositorioImpl implements AnaliticaRepositorio {
                 join pedido p on p.id_pedido = pd.fk_pedido
                 join producto pr on pr.id_producto = pd.fk_producto
                 where pr.fk_vendedor = :vendedorId
-                  and p.estado::text in """ + ESTADOS_VENTA + """
+                  and p.estado::text in %s
                 group by pr.id_producto, pr.nombre, pr.sku, pr.slug
                 order by unidades_vendidas desc, ingresos_generados desc
                 limit :limite
-                """;
+                """.formatted(ESTADOS_VENTA);
 
         return mapearTopProductos(
                 entityManager.createNativeQuery(sql)
@@ -170,7 +181,8 @@ public class AnaliticaRepositorioImpl implements AnaliticaRepositorio {
                     coalesce(sum(p.total) / nullif(count(distinct p.id_pedido), 0), 0) as ticket_promedio_global,
                     count(distinct p.fk_usuario) as cantidad_clientes_activos
                 from pedido p
-                where p.estado::text in """ + ESTADOS_VENTA;
+                where p.estado::text in %s
+                """.formatted(ESTADOS_VENTA);
 
         var fila = (Object[]) entityManager.createNativeQuery(sql).getSingleResult();
 
@@ -213,11 +225,11 @@ public class AnaliticaRepositorioImpl implements AnaliticaRepositorio {
                 join pedido p on p.id_pedido = pd.fk_pedido
                 join producto pr on pr.id_producto = pd.fk_producto
                 join usuario u on u.id_usuario = pr.fk_vendedor
-                where p.estado::text in """ + ESTADOS_VENTA + """
+                where p.estado::text in %s
                 group by u.id_usuario, u.nombre, u.email
                 order by ingresos_generados desc, pedidos_vendidos desc
                 limit :limite
-                """;
+                """.formatted(ESTADOS_VENTA);
 
         @SuppressWarnings("unchecked")
         List<Object[]> filas = entityManager.createNativeQuery(sql)
@@ -248,11 +260,11 @@ public class AnaliticaRepositorioImpl implements AnaliticaRepositorio {
                 from pedido_detalle pd
                 join pedido p on p.id_pedido = pd.fk_pedido
                 join producto pr on pr.id_producto = pd.fk_producto
-                where p.estado::text in """ + ESTADOS_VENTA + """
+                where p.estado::text in %s
                 group by pr.id_producto, pr.nombre, pr.sku, pr.slug
                 order by unidades_vendidas desc, ingresos_generados desc
                 limit :limite
-                """;
+                """.formatted(ESTADOS_VENTA);
 
         return mapearTopProductos(
                 entityManager.createNativeQuery(sql)
@@ -273,10 +285,10 @@ public class AnaliticaRepositorioImpl implements AnaliticaRepositorio {
                 join pedido p on p.id_pedido = pd.fk_pedido
                 join producto pr on pr.id_producto = pd.fk_producto
                 join categoria c on c.id_categoria = pr.fk_categoria
-                where p.estado::text in """ + ESTADOS_VENTA + """
+                where p.estado::text in %s
                 group by c.id_categoria, c.nombre
                 order by ingresos_generados desc, unidades_vendidas desc
-                """;
+                """.formatted(ESTADOS_VENTA);
 
         @SuppressWarnings("unchecked")
         List<Object[]> filas = entityManager.createNativeQuery(sql).getResultList();
@@ -300,11 +312,11 @@ public class AnaliticaRepositorioImpl implements AnaliticaRepositorio {
                     coalesce(sum(pa.monto), 0) as monto_total
                 from pago pa
                 join pedido p on p.id_pedido = pa.fk_pedido
-                where p.estado::text in """ + ESTADOS_VENTA + """
-                  and pa.estado::text not in ('rechazado', 'anulado')
+                where p.estado::text in %s
+                  and pa.estado::text not in %s
                 group by pa.tipo_pago::text
                 order by cantidad_usos desc, monto_total desc
-                """;
+                """.formatted(ESTADOS_VENTA, ESTADOS_PAGO_EXCLUIDOS);
 
         @SuppressWarnings("unchecked")
         List<Object[]> filas = entityManager.createNativeQuery(sql).getResultList();
@@ -443,6 +455,12 @@ public class AnaliticaRepositorioImpl implements AnaliticaRepositorio {
             case SEMANAL -> new ConfiguracionPeriodo("week", "8 weeks");
             case MENSUAL -> new ConfiguracionPeriodo("month", "12 months");
         };
+    }
+
+    private static String toSqlIn(List<String> valores) {
+        return valores.stream()
+                .map(valor -> "'" + valor + "'")
+                .collect(Collectors.joining(", ", "(", ")"));
     }
 
     private record ConfiguracionPeriodo(String truncado, String intervalo) {
