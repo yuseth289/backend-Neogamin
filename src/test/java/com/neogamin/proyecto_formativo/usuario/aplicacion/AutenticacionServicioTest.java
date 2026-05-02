@@ -1,5 +1,6 @@
 package com.neogamin.proyecto_formativo.usuario.aplicacion;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -7,20 +8,24 @@ import static org.mockito.Mockito.when;
 import com.neogamin.proyecto_formativo.compartido.dominio.EstadoGenerico;
 import com.neogamin.proyecto_formativo.compartido.seguridad.HashTokenServicio;
 import com.neogamin.proyecto_formativo.compartido.seguridad.JwtService;
+import com.neogamin.proyecto_formativo.compartido.seguridad.SecurityProperties;
 import com.neogamin.proyecto_formativo.notificacion.aplicacion.UsuarioInicioSesionEmailEvent;
 import com.neogamin.proyecto_formativo.notificacion.aplicacion.UsuarioRegistradoEmailEvent;
 import com.neogamin.proyecto_formativo.usuario.api.dto.LoginRequest;
 import com.neogamin.proyecto_formativo.usuario.api.dto.RegistroUsuarioRequest;
 import com.neogamin.proyecto_formativo.usuario.dominio.RolUsuario;
+import com.neogamin.proyecto_formativo.usuario.dominio.Sesion;
 import com.neogamin.proyecto_formativo.usuario.dominio.Usuario;
 import com.neogamin.proyecto_formativo.usuario.infraestructura.SesionRepositorioJpa;
 import com.neogamin.proyecto_formativo.usuario.infraestructura.UsuarioRepositorioJpa;
 import io.jsonwebtoken.JwtException;
 import jakarta.servlet.http.HttpServletRequest;
+import java.time.Duration;
 import java.util.Optional;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ApplicationEventPublisher;
@@ -47,8 +52,20 @@ class AutenticacionServicioTest {
     @Mock
     private ApplicationEventPublisher applicationEventPublisher;
 
-    @InjectMocks
     private AutenticacionServicio autenticacionServicio;
+
+    @BeforeEach
+    void setUp() {
+        autenticacionServicio = new AutenticacionServicio(
+                usuarioRepositorioJpa,
+                sesionRepositorioJpa,
+                passwordEncoder,
+                jwtService,
+                new SecurityProperties("dev-jwt-secret-change-me-123456789012", 45),
+                hashTokenServicio,
+                applicationEventPublisher
+        );
+    }
 
     @Test
     void shouldPublishWelcomeNotificationWhenUserRegisters() {
@@ -94,6 +111,12 @@ class AutenticacionServicioTest {
         when(servletRequest.getHeader("User-Agent")).thenReturn("JUnit");
 
         autenticacionServicio.login(new LoginRequest("laura@example.com", "secreto123"), servletRequest);
+
+        var sesionCaptor = ArgumentCaptor.forClass(Sesion.class);
+        verify(sesionRepositorioJpa).save(sesionCaptor.capture());
+        var sesionGuardada = sesionCaptor.getValue();
+        assertThat(Duration.between(sesionGuardada.getCreadaEn(), sesionGuardada.getExpiraEn()))
+                .isEqualTo(Duration.ofMinutes(45));
 
         verify(applicationEventPublisher).publishEvent(org.mockito.ArgumentMatchers.<Object>argThat(event ->
                 event instanceof UsuarioInicioSesionEmailEvent usuarioInicioSesionEmailEvent

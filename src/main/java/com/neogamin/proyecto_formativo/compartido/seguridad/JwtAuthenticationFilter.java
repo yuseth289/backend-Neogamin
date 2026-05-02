@@ -9,13 +9,10 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.time.OffsetDateTime;
-import org.springframework.http.HttpMethod;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
-import org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher;
-import org.springframework.security.web.util.matcher.OrRequestMatcher;
 import org.springframework.security.web.util.matcher.RequestMatcher;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -24,15 +21,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 @RequiredArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
-    private static final RequestMatcher PUBLIC_ENDPOINTS_MATCHER = new OrRequestMatcher(
-            PathPatternRequestMatcher.pathPattern("/api/auth/**"),
-            PathPatternRequestMatcher.pathPattern("/actuator/health"),
-            PathPatternRequestMatcher.pathPattern("/actuator/info"),
-            PathPatternRequestMatcher.pathPattern("/swagger-ui.html"),
-            PathPatternRequestMatcher.pathPattern("/swagger-ui/**"),
-            PathPatternRequestMatcher.pathPattern("/v3/api-docs/**"),
-            PathPatternRequestMatcher.pathPattern(HttpMethod.GET, "/api/catalogo/productos/**")
-    );
+    private static final RequestMatcher PUBLIC_ENDPOINTS_MATCHER = EndpointsPublicos.requestMatcher();
 
     private final JwtService jwtService;
     private final UsuarioDetallesServicio usuarioDetallesServicio;
