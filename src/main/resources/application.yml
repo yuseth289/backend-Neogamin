@@ -71,5 +71,5 @@ app:
       secret: ${JWT_SECRET:dev-jwt-secret-change-me-123456789012}
       expiracion-minutos: ${JWT_EXPIRATION_MINUTES:120}
   notificacion:
-    email-habilitado: ${APP_NOTIFICACION_EMAIL_HABILITADO:true}
+    email-habilitado: ${APP_NOTIFICACION_EMAIL_HABILITADO:false}
     email-remitente: ${APP_NOTIFICACION_EMAIL_REMITENTE:neogaming2026@gmail.com}
